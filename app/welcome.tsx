@@ -8,7 +8,7 @@
  * - Get Started button
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -32,8 +32,8 @@ export default function WelcomeScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
 
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
   const [showContent, setShowContent] = useState(false);
 
   // Features for auto-rotating display
@@ -78,12 +78,21 @@ export default function WelcomeScreen() {
   }, []);
 
   const handleGetStarted = async () => {
-    // For now, just navigate (no AsyncStorage check)
+    await markWelcomeSeen();
     router.replace('/(tabs)');
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await markWelcomeSeen();
     router.replace('/(tabs)');
+  };
+
+  const markWelcomeSeen = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenWelcome', 'true');
+    } catch (error) {
+      console.error('Error saving welcome status:', error);
+    }
   };
 
   return (
@@ -230,9 +239,11 @@ export default function WelcomeScreen() {
             >
               <Text style={styles.getStartedText}>Mulai Sekarang</Text>
             </TouchableOpacity>
-            <Text style={[styles.skipText, { color: colors.textTertiary }]} onPress={handleGetStarted}>
-              Lewati
-            </Text>
+            <TouchableOpacity onPress={handleSkip}>
+              <Text style={[styles.skipText, { color: colors.textTertiary }]}>
+                Lewati
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         )}
       </View>
